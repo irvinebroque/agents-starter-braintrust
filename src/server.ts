@@ -1,5 +1,7 @@
 import { routeAgentRequest, type Schedule } from "agents";
 
+import { initLogger, wrapOpenAI, wrapTraced } from "braintrust";
+
 import { unstable_getSchedulePrompt } from "agents/schedule";
 
 import { AIChatAgent } from "agents/ai-chat-agent";
@@ -13,6 +15,13 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { processToolCalls } from "./utils";
 import { tools, executions } from "./tools";
 import { AsyncLocalStorage } from "node:async_hooks";
+
+// Initialize the logger and OpenAI client
+const logger = initLogger({
+  projectName: "My Project",
+  apiKey: process.env.BRAINTRUST_API_KEY,
+  asyncFlush: false,
+});
 
 // we use ALS to expose the agent context to the tools
 export const agentContext = new AsyncLocalStorage<Chat>();
@@ -41,9 +50,9 @@ export class Chat extends AIChatAgent<Env> {
           });
 
           // Initialize OpenAI client with API key from environment
-          const openai = createOpenAI({
+          const openai = wrapOpenAI(createOpenAI({
             apiKey: this.env.OPENAI_API_KEY,
-          });
+          }));
 
           // Cloudflare AI Gateway
           // const openai = createOpenAI({
